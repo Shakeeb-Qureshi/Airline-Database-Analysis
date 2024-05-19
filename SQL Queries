@@ -1,4 +1,4 @@
-SQL Queries
+SQL Queries :
 
 The project contains a variety of SQL queries to extract and analyze data from the Airline database. 
 
@@ -195,14 +195,12 @@ SELECT COUNT(distinct flight_id) as flight_count
 FROM flights
 WHERE departure_airport IN ('NOZ','KRR')
 
-
 -- Count of Flights flying from KZN, DME, NBC, NJC, GDX, SGC, VKO, ROV
 
 SELECT departure_airport, COUNT(DISTINCT flight_id) as count_of_flights
 FROM flights
 WHERE departure_airport IN ('KZN','DME','NBC','NJC','GDX','SGC','VKO','ROV')
 GROUP BY departure_airport
-
 
 -- Flight details with range between 3000 and 6000 and flying from DME
 
@@ -213,7 +211,7 @@ WHERE departure_airport = 'DME' AND
      range BETWEEN 3000 AND 6000
 GROUP BY 1,2,3,4
 
--- Flight IDS using aircrafts from “Airbus” company and got cancelled or delayed
+-- Flight IDS using aircrafts from “Airbus” company and got Cancelled or Delayed
 
 SELECT Flight_id, model as aircraft_model
 FROM flights f
@@ -221,63 +219,50 @@ INNER JOIN aircrafts a ON f.aircraft_code = a.aircraft_code
 WHERE model LIKE '%Airbus%' AND 
       status IN ('Cancelled','Delayed')
 
-Find the list of flight ids which are using aircrafts from “Boeing” company and got cancelled or delayed
-Expected Output : Flight_id,aircraft_model
+-- Flight IDS using aircrafts from “Boeing” company and got Cancelled or Delayed
 
-Answer:
 SELECT Flight_id, model as aircraft_model
 FROM flights f
 JOIN aircrafts a ON f.aircraft_code = a.aircraft_code
 WHERE model LIKE '%Boeing%' AND 
       status IN ('Cancelled','Delayed')
 
+-- Airport with most cancelled flights (arriving)
 
-Which airport(name) has most cancelled flights (arriving)?
-Expected Output : Airport_name 
-
-
-Answer:
 With T1 as 
-(SELECT airport_name, count(airport_name),
-RANK() OVER (order by count(airport_name) desc) as RNK
-from flights f
-JOIN airports a on f.arrival_airport = a.airport_code
-WHERE status = 'Cancelled'
-GROUP BY airport_name)
-
+(
+    SELECT airport_name, count(airport_name),
+        RANK() OVER (order by count(airport_name) desc) as RNK
+    FROM flights f
+    JOIN airports a on f.arrival_airport = a.airport_code
+    WHERE status = 'Cancelled'
+    GROUP BY airport_name
+)
 SELECT airport_name
 FROM T1
 WHERE RNK = 1
 
-Identify flight ids which are using “Airbus aircrafts”
-Expected Output : Flight_id,aircraft_model
-
-Answer:
+-- Flight IDs using “Airbus aircrafts”
 
 SELECT Flight_id, model as aircraft_model
 FROM flights f
 JOIN aircrafts a ON f.aircraft_code = a.aircraft_code
 WHERE model LIKE '%Airbus%'
 
+-- Last Flight ID from every airport
 
-Identify date-wise last flight id flying from every airport?
-Expected Output: Flight_id,flight_number,schedule_departure,departure_airport
-
-Answer:
 With T1 as
-(SELECT Flight_id, flight_no, scheduled_departure, departure_airport,
-RANK() OVER (Partition by departure_airport,date (scheduled_departure) order by scheduled_departure desc) as RNK
-FROM flights
-ORDER BY departure_airport, scheduled_departure)
+(
+    SELECT Flight_id, flight_no, scheduled_departure, departure_airport,
+        RANK() OVER (Partition by departure_airport,date (scheduled_departure) order by scheduled_departure desc) as RNK
+    FROM flights
+    ORDER BY departure_airport, scheduled_departure
+)
 SELECT Flight_id, flight_no, scheduled_departure, departure_airport
 FROM T1
 WHERE RNK = 1
 
-
-Identify list of customers who will get the refund due to cancellation of the flights and how much amount they will get?
-Expected Output : Passenger_name,total_refund.
-
-Answer:
+-- Customers and the refund amount whose flights got cancelled
 
 SELECT Passenger_name, sum(total_amount) as total_refund
 FROM tickets t 
@@ -287,51 +272,41 @@ JOIN flights f ON tf.flight_id = f.flight_id
 WHERE status = 'Cancelled'
 GROUP BY 1
 
-Identify date wise first cancelled flight id flying for every airport?
-Expected Output : Flight_id,flight_number,schedule_departure,departure_airport
+-- First Cancelled Flight ID of every airport?
 
-Answer:
 With T1 as
-(SELECT * 
-FROM flights
-WHERE status = 'Cancelled'),
-
+(
+    SELECT * 
+    FROM flights
+    WHERE status = 'Cancelled'
+),
 T2 as 
-(SELECT Flight_id, flight_no, scheduled_departure, departure_airport,
-RANK() OVER (Partition by arrival_airport,date (scheduled_departure) order by scheduled_departure) as RNK
-FROM T1)
-
+(
+    SELECT Flight_id, flight_no, scheduled_departure, departure_airport,
+        RANK() OVER (Partition by arrival_airport,date (scheduled_departure) order by scheduled_departure) as RNK
+    FROM T1
+)
 SELECT Flight_id, flight_no, scheduled_departure, departure_airport
 FROM T2
 WHERE RNK = 1
 
-Identify list of Airbus flight ids which got cancelled.
-Expected Output : Flight_id
-
-Answer:
+-- Cancelled Flight IDs
 
 SELECT Flight_id
- FROM flights f
- LEFT JOIN aircrafts a on f.aircraft_code = a.aircraft_code 
- WHERE model like '%Airbus%' AND status = 'Cancelled'
-
-Identify list of flight ids having highest range.
- Expected Output : Flight_no, range
-
-
-Answer:
-With T1 as 
-(SELECT flight_id, range,
-RANK() OVER (ORDER BY range desc) as RNK
 FROM flights f
-JOIN aircrafts a ON f.aircraft_code = a.aircraft_code
-GROUP BY 1,2)
+LEFT JOIN aircrafts a on f.aircraft_code = a.aircraft_code 
+WHERE model like '%Airbus%' AND status = 'Cancelled'
+
+-- Flight IDs with highest range.
+ 
+With T1 as 
+(
+    SELECT flight_id, range,
+        RANK() OVER (ORDER BY range desc) as RNK
+    FROM flights f
+    JOIN aircrafts a ON f.aircraft_code = a.aircraft_code
+    GROUP BY 1,2
+)
 SELECT flight_id, range
 FROM T1
 WHERE RNK = 1
-
-
-
-
-
-
